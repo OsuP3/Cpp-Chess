@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 #include <vector>
 #include <string>
 using namespace std;
@@ -14,6 +15,91 @@ void PrintBoard(vector<string> board){
         cout<<"\n";
     }
 }
+
+void GetDestination(string &selectedTile, int &destinationColumn, int &destinationRow, string player, vector<string> &board){
+    cout<<"pick column of piece destination"<<endl;
+    cin>>destinationColumn;
+
+    cout<<"pick where row of piece destination"<<endl;
+    cin>>destinationRow;
+
+    selectedTile = board.at(((destinationRow-1)*8) + (destinationColumn-1));
+    while(selectedTile.find(player) != string::npos){
+        PrintBoard(board);
+        cout<<"INVALID!\npick a column of piece destination"<<endl;
+        cin>>destinationColumn;
+        cout<<"pick row of piece destination:"<<endl;
+        cin>>destinationRow;
+        selectedTile = board.at(((destinationRow-1)*8) + (destinationColumn-1));
+    }
+}
+
+void GetPiece(string &selectedPiece, int &pieceColumn, int &pieceRow, string player, vector<string> &board){
+    cout<<"pick column of piece to move"<<endl;
+    cin>>pieceColumn;
+    cout<<"pick row of piece to move:"<<endl;
+    cin>>pieceRow;
+
+    selectedPiece = board.at(((pieceRow-1)*8) + (pieceColumn-1));
+
+    while(selectedPiece.find(player) == string::npos){
+        PrintBoard(board);
+        cout<<"INVALID!\npick a column of piece to move"<<endl;
+        cin>>pieceColumn;
+        cout<<"pick row of piece to move:"<<endl;
+        cin>>pieceRow;
+        selectedPiece = board.at(((pieceRow-1)*8) + (pieceColumn-1));
+    }
+
+}
+
+void CheckValid(string &selectedPiece,string &selectedTile, int &pieceColumn, int &pieceRow, int &destinationColumn, int &destinationRow, string player, vector<string> &board){
+    string tempPiece;
+    while(selectedPiece.find("P") != string::npos){//Pawn selected
+        if((player == "1" && (destinationRow <= pieceRow))||(player == "2" && (destinationRow >= pieceRow))){
+            PrintBoard(board);
+            cout<<"Pawn cannot move backwards"<<endl;//cannot move backwards
+            GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
+            continue;
+        }
+        if((player == "1" && destinationColumn != pieceColumn && selectedTile.find("2")==string::npos)||(player == "2" && destinationColumn != pieceColumn && selectedTile.find("1")==string::npos)){
+            PrintBoard(board);
+            cout<<"Invalid Pawn move"<<endl;//cant leave column unless taking
+            GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
+            continue;
+        }
+        if((abs(destinationRow - pieceRow))>=2 && ((player == "1" && pieceRow != 2)||(player == "2" && pieceRow != 7))){
+            PrintBoard(board);
+            cout<<"Invalid Pawn move"<<endl;//no invalid double steps
+            GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
+            continue;
+        }
+        if(sqrt(pow((destinationColumn-pieceColumn),2) + pow((destinationRow-pieceRow), 2)) > 2){
+            PrintBoard(board);
+            cout<<"Invalid Pawn move"<<endl;//pawn moves too far
+            GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
+            continue;
+        }
+        break;
+    }
+
+    while(selectedPiece.find("R") != string::npos){//Rook selected
+        if((pieceRow != destinationRow && pieceColumn!=destinationColumn)){
+            PrintBoard(board);
+            cout<<"Invalid Rook move"<<endl;//rook moves diagonally
+            GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
+            continue;
+        }
+    }
+
+}
+
+
+void MovePiece(int pieceRow, int pieceColumn, int destinationRow, int destinationColumn, string selectedPiece, vector<string> &board){
+    board.at(((pieceRow-1)*8) + (pieceColumn-1)) = "XX";
+    board.at(((destinationRow-1)*8) + (destinationColumn-1)) = selectedPiece;
+}
+
 string Result(vector<string> board){
     return "none";
 }
@@ -21,8 +107,8 @@ string Result(vector<string> board){
 int main()
 {
     string selectedPiece, selectedTile;
-    string player = "1";
-    int pick1, pick2, pick3, pick4;
+    string player = "2";
+    int pieceRow, pieceColumn, destinationRow, destinationColumn;
     vector<string> board = {"R1", "H1", "B1", "Q1", "K1","B1","H1","R1",
                             "P1", "P1", "P1", "P1", "P1","P1","P1","P1",
                             "XX", "XX", "XX", "XX", "XX","XX","XX","XX",
@@ -32,45 +118,19 @@ int main()
                             "P2", "P2", "P2", "P2", "P2","P2","P2","P2",
                             "R2", "H2", "B2", "Q2", "K2","B2","H2","R2"};
 
+
     while(Result(board) == "none"){
         PrintBoard(board);
+        cout<<"Player "<<player<<"'s turn, ";
 
-        cout<<"Player "<<player<<"'s turn, pick column of piece to move"<<endl;
-        cin>>pick2;
-        cout<<"pick row of piece to move:"<<endl;
-        cin>>pick1;
+        GetPiece(selectedPiece, pieceColumn,pieceRow, player,board);
 
-        selectedPiece = board.at(((pick1-1)*8) + (pick2-1));
+        GetDestination(selectedTile, destinationColumn, destinationRow, player,  board);
 
-        while(selectedPiece.find(player) == string::npos){
-            PrintBoard(board);
-            cout<<"INVALID!\npick a column of piece to move"<<endl;
-            cin>>pick2;
-            cout<<"pick row of piece to move:"<<endl;
-            cin>>pick1;
-            selectedPiece = board.at(((pick1-1)*8) + (pick2-1));
-        }
+        CheckValid(selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
 
-        cout<<"pick column of piece destination"<<endl;
-        cin>>pick4;
+        MovePiece(pieceRow, pieceColumn, destinationRow, destinationColumn, selectedPiece, board);
 
-        cout<<"pick where row of piece destination"<<endl;
-        cin>>pick3;
-
-        selectedTile = board.at(((pick3-1)*8) + (pick4-1));
-        while(selectedTile.find(player) != string::npos){
-            PrintBoard(board);
-            cout<<"INVALID!\npick a column of piece destination"<<endl;
-            cin>>pick4;
-            cout<<"pick row of piece destination:"<<endl;
-            cin>>pick3;
-            selectedTile = board.at(((pick3-1)*8) + (pick4-1));
-        }
-
-
-        board.at(((pick1-1)*8) + (pick2-1)) = "XX";
-
-        board.at(((pick3-1)*8) + (pick4-1)) = selectedPiece;
 
         if (player == "1")player = "2";
         else player = "1";
