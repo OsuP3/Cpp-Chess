@@ -6,18 +6,28 @@
 using namespace std;
 class piece{
 public:
-    piece();
-    piece(int inputrow, int inputcolumn, string inputpiece){
-        row = inputrow;
-        column = inputcolumn;
-        pieceType = inputpiece[0];
-        pieceName = inputpiece;
+    piece(){
+        row =0;
+        column=0;
+        pieceType= "X";
+        RowOp= 0;
+        ColumnOp = 0;
+        pieceName ="XX";
+        player = "X";
     }
-    piece(int inputrow, int inputcolumn, string inputpiece, int inputRowOp, int inputColOp){
+    piece(int inputrow, int inputcolumn, string inputName){
         row = inputrow;
         column = inputcolumn;
-        pieceType = inputpiece[0];
-        pieceName = inputpiece;
+        pieceType = inputName[0];
+        pieceName = inputName;
+        player = inputName[1];
+    }
+    piece(int inputrow, int inputcolumn, string inputName, int inputRowOp, int inputColOp){
+        row = inputrow;
+        column = inputcolumn;
+        pieceType = inputName[0];
+        pieceName = inputName;
+        player = inputName[1];
         RowOp = inputRowOp;
         ColumnOp = inputColOp;
     }
@@ -25,10 +35,11 @@ public:
     int Row(){return row;}
     int Col(){return column;}
     string Type(){return pieceType;}
+    string Player(){return player;}
     int GetColOp(){return ColumnOp;}
     int GetRowOp(){return RowOp;}
     string GetName(){return pieceName;}
-    void SetName(string inputName){pieceName = inputName;}
+    void SetName(string inputName){pieceName = inputName; pieceType = inputName[0]; player = inputName[1];}
     void SetRow(int inputRow){row = inputRow;}
     void SetCol(int inputCol){column = inputCol;}
 private:
@@ -38,6 +49,7 @@ private:
     int RowOp;//what row operation led to attack (for keeping track of direction of attack)
     int ColumnOp;//what column operation led to attack
     string pieceName;
+    string player;
 };
 
 bool InBoard(int row, int col){//check coordinates are on board
@@ -64,49 +76,54 @@ void PrintBoard(vector<string> board){//Prints the board
         cout<<"\n";
     }
 }
-void GetPiece(string &selectedPiece, int &pieceColumn, int &pieceRow, string player, vector<string> &board){//Prompts player for piece
-    cout<<"pick column of piece to move"<<endl;
-    cin>>pieceColumn;
+void GetPiece(piece &Selected, string player, vector<string> &board){//Prompts player for piece
+    int pieceRow, pieceColumn;
     cout<<"pick row of piece to move:"<<endl;
-    cin>>pieceRow;
+    cin>>pieceRow; Selected.SetRow(pieceRow);
+    cout<<"pick column of piece to move"<<endl;
+    cin>>pieceColumn; Selected.SetCol(pieceColumn);
 
-    selectedPiece = board.at(((pieceRow-1)*8) + (pieceColumn-1));
 
-    while(selectedPiece.find(player) == string::npos){
+    Selected.SetName(board.at(((pieceRow-1)*8) + (pieceColumn-1)));
+
+    while(Selected.GetName()[1] != player[0]){
         PrintBoard(board);
-        cout<<"INVALID!\npick a column of piece to move"<<endl;
-        cin>>pieceColumn;
-        cout<<"pick row of piece to move:"<<endl;
-        cin>>pieceRow;
-        selectedPiece = board.at(((pieceRow-1)*8) + (pieceColumn-1));
+        cout<<"INVALID!\npick row of piece to move:"<<endl;
+        cin>>pieceRow; Selected.SetRow(pieceRow);
+        cout<<"pick a column of piece to move"<<endl;
+        cin>>pieceColumn; Selected.SetCol(pieceColumn);
+
+        Selected.SetName(board.at(((pieceRow-1)*8) + (pieceColumn-1)));
     }
 
 }
-void GetDestination(string &selectedPiece, string &selectedTile,int &pieceColumn, int &pieceRow, int &destinationColumn, int &destinationRow, string player, vector<string> &board){//Prompts player for destination
-    cout<<"pick column of piece destination"<<endl;
-    cin>>destinationColumn;
+void GetDestination(piece &Selected, piece &Destination, string player, vector<string> &board){//Prompts player for destination
+    int destinationColumn, destinationRow;
 
     cout<<"pick where row of piece destination"<<endl;
-    cin>>destinationRow;
+    cin>>destinationRow; Destination.SetRow(destinationRow);
+    cout<<"pick column of piece destination"<<endl;
+    cin>>destinationColumn;Destination.SetCol(destinationColumn);
 
-    selectedTile = board.at(((destinationRow-1)*8) + (destinationColumn-1));
+    Destination.SetName(board.at(((destinationRow-1)*8) + (destinationColumn-1)));
 
-    while(finds(player, selectedTile)){
+    while(Destination.Player() == player){
         PrintBoard(board);
         cout<<"INVALID!"<<endl;
-        GetPiece(selectedPiece, pieceColumn,pieceRow, player,board);
-        cout<<"pick column of piece destination"<<endl;
-        cin>>destinationColumn;
+        GetPiece(Selected, player,board);
         cout<<"pick row of piece destination:"<<endl;
-        cin>>destinationRow;
-        selectedTile = board.at(((destinationRow-1)*8) + (destinationColumn-1));
+        cin>>destinationRow; Destination.SetRow(destinationRow);
+        cout<<"pick column of piece destination"<<endl;
+        cin>>destinationColumn; Destination.SetCol(destinationColumn);
+
+        Destination.SetName(board.at(((destinationRow-1)*8) + (destinationColumn-1)));
     }
 }
-void Retry(string name, string &selectedPiece,string &selectedTile, int &pieceColumn, int &pieceRow, int &destinationColumn, int &destinationRow, string player, vector<string> &board){//RePrompts player for piece and destination
+void Retry(string pieceFullName, piece &Selected, piece &Destination, string player, vector<string> &board){//RePrompts player for piece and destination
     PrintBoard(board);
-    cout<<"Invalid "<<name<<" move"<<endl;
-    GetPiece(selectedPiece, pieceColumn,pieceRow, player,board);
-    GetDestination(selectedPiece,selectedTile,pieceColumn,pieceRow,destinationColumn,destinationRow,player,board);
+    cout<<"Invalid "<<pieceFullName<<" move"<<endl;
+    GetPiece(Selected, player,board);
+    GetDestination(Selected, Destination,player,board);
 }
 string CheckSafety(piece InDanger, string player, vector<string> &board, vector<piece> &attackers){//Checks If A tile is In Danger
     string tempPiece, enemy = "2";
@@ -198,77 +215,77 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
     if(!safe){return "unsafe";}
     return "safe";
 }
-string TheoricalSafety(piece InDanger, string player, vector<string> board, int attackerRow, int attackerCol, int attackerRow2, int attackerCol2){//checks if a theoretical move will be safe
-    vector<piece> tempattackers;
+string TheoricalSafety(piece InDanger, string player, vector<string> board, piece Attacker, piece attackerDestination){//checks if a theoretical move will be safe
+    vector<piece> tempAttackers;
     string enemy = "2";
     if(player == "2"){enemy = "1";}
 
-    board.at(attackerRow2*8 + attackerCol2) = board.at((attackerRow *8) + attackerCol);//make switch on theoretical board
-    board.at((attackerRow *8) + attackerCol) = "XX";
+    board.at(attackerDestination.Row()*8 + attackerDestination.Col()) = board.at((Attacker.Row() *8) + Attacker.Col());//make switch on theoretical board
+    board.at((Attacker.Row() *8) + Attacker.Col()) = "XX";
 
-    return CheckSafety(InDanger, player, board, tempattackers);//check safety of theoretical board
+    return CheckSafety(InDanger, player, board, tempAttackers);//check safety of theoretical board
 
 }
-void CheckValid(string &selectedPiece,string &selectedTile, int &pieceColumn, int &pieceRow, int &destinationColumn, int &destinationRow, string player, vector<string> &board){//check that a pieces destination is valid
+void CheckValid(piece Selected, piece Destination, string player, vector<string> &board){//check that a pieces destination is valid
 start:
     string tempPiece;
     int tempHIGH, tempLOW, row ,column;
     while(true){
 
-        while(selectedPiece.find("P") != string::npos){//Pawn selected
-            if((player == "1" && (destinationRow <= pieceRow))||(player == "2" && (destinationRow >= pieceRow))){
-                Retry("Pawn", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+        while(Selected.Type() == "P"){//Pawn selected
+            if((player == "1" && (Destination.Row() <= Selected.Row()))||(player == "2" && (Destination.Row() >= Selected.Row()))){
+                Retry("Pawn", Selected, Destination, player, board);
                 goto start;
             }
-            if((player == "1" && destinationColumn != pieceColumn && selectedTile.find("2")==string::npos)||(player == "2" && destinationColumn != pieceColumn && selectedTile.find("1")==string::npos)){
-                Retry("Pawn", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if((player == "1" && Destination.Col() != Selected.Col() && Destination.GetName().find("2")==string::npos)||(player == "2" && Destination.Col() != Selected.Col() && Destination.GetName().find("1")==string::npos)){
+                Retry("Pawn", Selected, Destination, player, board);
                 goto start;
             }
-            if((abs(destinationRow - pieceRow))>=2 && ((player == "1" && pieceRow != 2)||(player == "2" && pieceRow != 7))){
-                Retry("Pawn", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if((abs(Destination.Row() - Selected.Row()))>=2 && ((player == "1" && Selected.Row() != 2)||(player == "2" && Selected.Row() != 7))){
+                Retry("Pawn", Selected, Destination, player, board);
                 goto start;
             }
-            if(sqrt(pow((destinationColumn-pieceColumn),2) + pow((destinationRow-pieceRow), 2)) > 2){
-                Retry("Pawn", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if(sqrt(pow((Destination.Col()-Selected.Col()),2) + pow((Destination.Row()-Selected.Row()), 2)) > 2){
+                Retry("Pawn", Selected, Destination, player, board);
                 goto start;
             }
             break;
         }
-        while(selectedPiece.find("R") != string::npos){//Rook selected
+        while(Selected.Type() == "R"){//Rook selected
             //cout<<"enters while"<<endl;
-            if((pieceRow != destinationRow && pieceColumn!=destinationColumn)){
-                Retry("Rook", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if((Selected.Row() != Destination.Row() && Selected.Col()!=Destination.Col())){
+                Retry("Rook", Selected, Destination, player, board);
                 goto start;
             }
-            if(pieceColumn==destinationColumn){
-                if(pieceRow>destinationRow){
-                    tempHIGH = pieceRow;
-                    tempLOW = destinationRow;
+            if(Selected.Col()==Destination.Col()){
+                if(Selected.Row()>Destination.Row()){
+                    tempHIGH = Selected.Row();
+                    tempLOW = Destination.Row();
                 }
                 else{
-                    tempHIGH = destinationRow;
-                    tempLOW = pieceRow+1;
+                    tempHIGH = Destination.Row();
+                    tempLOW = Selected.Row()+1;
                 }
                 for(;tempLOW < tempHIGH; tempLOW++){
-                    if(board.at(((tempLOW-1)*8) + (pieceColumn-1)) != "XX"){
-                        Retry("Rook", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                    if(board.at(((tempLOW-1)*8) + (Selected.Col()-1)) != "XX"){
+                        Retry("Rook", Selected, Destination, player, board);
                         goto start;
                     }
                 }
             }
             else{
-                if(pieceColumn>destinationColumn){
-                    tempHIGH = pieceColumn;
-                    tempLOW = destinationColumn;
+                if(Selected.Col()>Destination.Col()){
+                    tempHIGH = Selected.Col();
+                    tempLOW = Destination.Col();
                 }
                 else{
-                    tempHIGH = destinationColumn;
-                    tempLOW = pieceColumn+1;
+                    tempHIGH = Destination.Col();
+                    tempLOW = Selected.Col()+1;
                 }
                 for(;tempLOW < tempHIGH; tempLOW++){//1 5
                     //cout<<tempLOW<<endl;
-                    if(board.at(((pieceRow-1)*8) + (tempLOW-1)) != "XX"){
-                        Retry("Rook", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                    if(board.at(((Selected.Row()-1)*8) + (tempLOW-1)) != "XX"){
+                        Retry("Rook", Selected, Destination, player, board);
                         goto start;
 
                     }
@@ -276,49 +293,49 @@ start:
             }
             break;
         }
-        while(selectedPiece.find("H") != string::npos){//Knight selected
-            if(((abs(pieceColumn-destinationColumn) == 1)&&(abs(pieceRow-destinationRow)==2))||((abs(pieceColumn-destinationColumn) == 2)&&(abs(pieceRow-destinationRow)==1))){
+        while(Selected.Type() == "H"){//Knight selected
+            if(((abs(Selected.Col()-Destination.Col()) == 1)&&(abs(Selected.Row()-Destination.Row())==2))||((abs(Selected.Col()-Destination.Col()) == 2)&&(abs(Selected.Row()-Destination.Row())==1))){
                 return;
             }
             else{
-                Retry("Knight", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                Retry("Knight", Selected, Destination, player, board);
                 goto start;
             }
 
 
         }
-        while(selectedPiece.find("B") != string::npos){//Bishop selected
-            if(abs(pieceColumn-destinationColumn) != abs(pieceRow-destinationRow)){
-                Retry("Rook", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+        while(Selected.Type() == "B"){//Bishop selected
+            if(abs(Selected.Col()-Destination.Col()) != abs(Selected.Row()-Destination.Row())){
+                Retry("Bishop", Selected, Destination, player, board);
                 goto start;
             }
             else {return;}
         }
-        while(selectedPiece.find("Q") != string::npos){//Queen selected
-            if(abs(pieceColumn-destinationColumn) == abs(pieceRow-destinationRow)){
+        while(Selected.Type() == "Q"){//Queen selected
+            if(abs(Selected.Col()-Destination.Col()) == abs(Selected.Row()-Destination.Row())){
                 return;
             }
-            if((sqrt(pow((destinationColumn-pieceColumn),2) + pow((destinationRow-pieceRow), 2)) > 1) && (pieceColumn != destinationColumn) && (pieceRow != destinationRow)){
-                Retry("Queen", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if((sqrt(pow((Destination.Col()-Selected.Col()),2) + pow((Destination.Row()-Selected.Row()), 2)) > 1) && (Selected.Col() != Destination.Col()) && (Selected.Row() != Destination.Row())){
+                Retry("Queen", Selected, Destination, player, board);
                 goto start;
             }
             return;
         }
-        while(selectedPiece.find("K") != string::npos){//King selected
-            if((sqrt(pow((destinationColumn-pieceColumn),2) + pow((destinationRow-pieceRow), 2)) > 1)) {
-                Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+        while(Selected.Type() == "K"){//King selected
+            if((sqrt(pow((Destination.Col()-Selected.Col()),2) + pow((Destination.Row()-Selected.Row()), 2)) > 1)) {
+                Retry("King", Selected, Destination, player, board);
                 goto start;
             }
-            if((player == "2" && ((board.at(((destinationRow-1-1)*8) + (destinationColumn-1-1)).find("P") != string::npos)||(board.at(((destinationRow-1-1)*8) + (destinationColumn)).find("P") != string::npos)))||(player == "1" && ((board.at(((destinationRow)*8) + (destinationColumn-1-1)).find("P") != string::npos)||(board.at(((destinationRow)*8) + (destinationColumn)).find("P") != string::npos)))){
-                Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+            if((player == "2" && ((board.at(((Destination.Row()-1-1)*8) + (Destination.Col()-1-1)).find("P") != string::npos)||(board.at(((Destination.Row()-1-1)*8) + (Destination.Col())).find("P") != string::npos)))||(player == "1" && ((board.at(((Destination.Row())*8) + (Destination.Col()-1-1)).find("P") != string::npos)||(board.at(((Destination.Row())*8) + (Destination.Col())).find("P") != string::npos)))){
+                Retry("King", Selected, Destination, player, board);
                 goto start;
 
             }
             for(column = 0; column < 3; column++){
                 for(row = 0; row< 3; row++){
-                    tempPiece = (board.at((destinationRow+row-1-1)*8 + (destinationColumn+column-1-1)));
+                    tempPiece = (board.at((Destination.Row()+row-1-1)*8 + (Destination.Col()+column-1-1)));
                     if((tempPiece.find(player) == string::npos && tempPiece.find("Q") != string::npos)||(tempPiece.find(player) == string::npos && tempPiece.find("K") != string::npos)){
-                        Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                        Retry("King", Selected, Destination, player, board);
                         goto start;
                     }
                 }
@@ -328,10 +345,10 @@ start:
             int knightRows[8] =    {-2, -1, 2, 1,  2, -1, -2,  1};
             //cout<<"brah"<<endl;
             for(int k = 0; k < 8; k++){
-                //cout<<board.at((destinationRow-1+knightRows[k])*8 + (destinationColumn-1+knightColumns[k]))<<endl;
-                tempPiece = board.at((destinationRow-1+knightRows[k])*8 + (destinationColumn-1+knightColumns[k]));
+                //cout<<board.at((Destination.Row()-1+knightRows[k])*8 + (Destination.Col()-1+knightColumns[k]))<<endl;
+                tempPiece = board.at((Destination.Row()-1+knightRows[k])*8 + (Destination.Col()-1+knightColumns[k]));
                 if(tempPiece.find("H") != string::npos && tempPiece.find(player) == string::npos){
-                    Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                    Retry("King", Selected, Destination, player, board);
                     //cout<<"pluh"<<endl;
                     goto start;
                 }
@@ -347,15 +364,15 @@ start:
                 row = rows[k];
                 column = columns[k];
                 while(true){
-                    tempPiece = board.at((destinationRow-1+row)*8 + (destinationColumn-1+column));//temp piece to check validity
+                    tempPiece = board.at((Destination.Row()-1+row)*8 + (Destination.Col()-1+column));//temp piece to check validity
                     if(tempPiece.find(player) != string::npos){break;continue;}
                     if(tempPiece.find(player) == string::npos && tempPiece.find("Q")==string::npos && tempPiece.find("R")==string::npos && tempPiece.find("XX")==string::npos){break;continue;}
 
                     if(tempPiece.find("Q")!=string::npos||tempPiece.find("R")!=string::npos){
-                        Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                        Retry("King", Selected, Destination, player, board);
                         goto start;
                     }
-                    //cout<<(destinationColumn+column-1)<<" "<< (destinationRow+row-1)<<endl;
+                    //cout<<(Destination.Col()+column-1)<<" "<< (Destination.Row()+row-1)<<endl;
                     row += rowsop[k];
                     column += columnsop[k];
                 }
@@ -366,15 +383,15 @@ start:
                 row = rows[k];
                 column = columns[k];
                 while(true){
-                    tempPiece = board.at((destinationRow-1-1+row)*8 + (destinationColumn-1-1+column));
+                    tempPiece = board.at((Destination.Row()-1-1+row)*8 + (Destination.Col()-1-1+column));
                     if(tempPiece.find(player) != string::npos){break;continue;}
                     if(tempPiece.find(player) == string::npos && tempPiece.find("Q")==string::npos && tempPiece.find("B")==string::npos && tempPiece.find("XX")==string::npos){break;continue;}
 
                     if(tempPiece.find("Q")!=string::npos||tempPiece.find("B")!=string::npos){
-                        Retry("King", selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+                        Retry("King", Selected, Destination, player, board);
                         goto start;
                     }
-                    //cout<<(destinationColumn+column-1)<<" "<< (destinationRow+row-1)<<endl;
+                    //cout<<(Destination.Col()+column-1)<<" "<< (Destination.Row()+row-1)<<endl;
                     row += rowsop[k];
                     column += columnsop[k];
                 }
@@ -385,9 +402,9 @@ start:
         return;
     }
 }
-void MovePiece(int pieceRow, int pieceColumn, int destinationRow, int destinationColumn, string selectedPiece, vector<string> &board){//moves piece on board
-    board.at(((pieceRow-1)*8) + (pieceColumn-1)) = "XX";
-    board.at(((destinationRow-1)*8) + (destinationColumn-1)) = selectedPiece;
+void MovePiece(piece Selected, piece Destination, vector<string> &board){//moves piece on board
+    board.at(((Selected.Row()-1)*8) + (Selected.Col()-1)) = "XX";
+    board.at(((Destination.Row()-1)*8) + (Destination.Col()-1)) = Selected.GetName();
 }
 bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker){//Checks if you can block the path of the attacker
     int row=Attacker.GetRowOp(), column = Attacker.GetColOp();
@@ -404,7 +421,7 @@ bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker)
             // gross setting up of pieces
             if(Pawn.GetName() == "P"+player){
                 cout<<"pawn check!"<<endl;
-                if(TheoricalSafety(King ,player, board, Pawn.Row(), Pawn.Col(), Tile.Row(), Tile.Col()) == "safe"){
+                if(TheoricalSafety(King ,player, board, Pawn, Tile) == "safe"){
 
                     return true;
                 }
@@ -412,7 +429,7 @@ bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker)
         }
         if(CheckSafety(Tile, enemyPlayer, board, blockers) != "safe"){//if you can attack the tile //might not account for some pawn scenarios, not sure though
             for(piece blocker : blockers){//check if any of the blockers can succesfully attack the spot
-                if(blocker.Type() != "P" && TheoricalSafety(King,player, board, blocker.Row(), blocker.Col(), King.Row()+row,King.Col()+column) == "safe"){
+                if(blocker.Type() != "P" && TheoricalSafety(King,player, board, blocker, Tile) == "safe"){
                     cout<<"CAN BLOCK!!!!!!!!!"<<endl;
                     return true;
                 }
@@ -461,7 +478,7 @@ string Result(string player, vector<string> &board){
                     if(attackerSafety != "safe"){//CAN ATTACK YOUR ATTACKER
                         for(piece Defender : defenders){//every possible defender
                             //cout<<"step1"<<endl;
-                            if(TheoricalSafety(King ,player,board,Defender.Row(), Defender.Col(), kingsAttackers.at(0).Row(), kingsAttackers.at(0).Col()) == "safe"){//check the safety of doing that move
+                            if(TheoricalSafety(King ,player,board,Defender, kingsAttackers.at(0)) == "safe"){//check the safety of doing that move
                                 return "none";
                             }
 
@@ -487,13 +504,12 @@ string Result(string player, vector<string> &board){
 }
 
 
-int main()
+int main()//Chess
 {
 
     string selectedPiece, selectedTile;
     string player = "1";
     piece Selected, Destination;
-    int pieceRow, pieceColumn, destinationRow, destinationColumn;
     vector<string> board = {"P1", "H1", "B1", "P1", "K1","P1","R2","XX",
                             "P1", "P1", "XX", "P1", "P1","XX","XX","XX",
                             "XX", "XX", "XX", "XX", "XX","XX","B2","XX",
@@ -509,14 +525,14 @@ int main()
         PrintBoard(board);
         cout<<"Player "<<player<<"'s turn, ";
 
-        GetPiece(selectedPiece, pieceColumn,pieceRow, player,board);
+        GetPiece(Selected, player ,board);
 
-        GetDestination(selectedPiece,selectedTile,pieceColumn,pieceRow,destinationColumn,destinationRow,player,board);
+        GetDestination(Selected, Destination,player,board);
 
-        CheckValid(selectedPiece,selectedTile, pieceColumn, pieceRow, destinationColumn,destinationRow, player, board);
+        CheckValid(Selected, Destination, player, board);
 
         //cout<<"check valid done"<<endl;
-        MovePiece(pieceRow, pieceColumn, destinationRow, destinationColumn, selectedPiece, board);
+        MovePiece(Selected, Destination, board);
         if (player == "1")player = "2";
         else player = "1";
 
