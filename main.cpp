@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+
 using namespace std;
 class piece{
 public:
@@ -31,6 +32,10 @@ public:
         RowOp = inputRowOp;
         ColumnOp = inputColOp;
     }
+    //piece operator =(const piece &original){
+    //    return piece(original.row, original.column, original.pieceName);
+
+    //}
     void printCoords(){cout<<"vector row = "<<row<<"|| vector column = "<<column<<endl;}
     int Row(){return row;}
     int Col(){return column;}
@@ -54,10 +59,14 @@ private:
 
 bool InBoard(int row, int col){//check coordinates are on board
     if(row >= 8 || row < 0 || col >= 8 || col < 0){
-        cout<<"out of board"<<endl;
+        //cout<<"out of board"<<endl;
         return false;
     }
     return true;
+}
+void MovePiece(piece Selected, piece Destination, vector<string> &board){//moves piece on board
+    board.at(((Selected.Row())*8) + (Selected.Col())) = "XX";
+    board.at(((Destination.Row())*8) + (Destination.Col())) = Selected.GetName();
 }
 bool finds(string phrase, string astring){//find a phrase in a string
     if(astring.find(phrase) != string::npos){
@@ -79,44 +88,44 @@ void PrintBoard(vector<string> board){//Prints the board
 void GetPiece(piece &Selected, string player, vector<string> &board){//Prompts player for piece
     int pieceRow, pieceColumn;
     cout<<"pick row of piece to move:"<<endl;
-    cin>>pieceRow; Selected.SetRow(pieceRow);
+    cin>>pieceRow; Selected.SetRow(pieceRow-1);
     cout<<"pick column of piece to move"<<endl;
-    cin>>pieceColumn; Selected.SetCol(pieceColumn);
+    cin>>pieceColumn; Selected.SetCol(pieceColumn-1);
 
 
-    Selected.SetName(board.at(((pieceRow-1)*8) + (pieceColumn-1)));
-
-    while(Selected.GetName()[1] != player[0]){
+    Selected.SetName(board.at(((Selected.Row())*8) + (Selected.Col())));
+    //cout<<Selected.GetName()<<endl;
+    while(Selected.Player() != player){
         PrintBoard(board);
         cout<<"INVALID!\npick row of piece to move:"<<endl;
-        cin>>pieceRow; Selected.SetRow(pieceRow);
+        cin>>pieceRow; Selected.SetRow(pieceRow-1);
         cout<<"pick a column of piece to move"<<endl;
-        cin>>pieceColumn; Selected.SetCol(pieceColumn);
+        cin>>pieceColumn; Selected.SetCol(pieceColumn-1);
 
-        Selected.SetName(board.at(((pieceRow-1)*8) + (pieceColumn-1)));
+        Selected.SetName(board.at(((Selected.Row())*8) + (Selected.Col())));
+        //cout<<Selected.GetName()<<endl;
     }
 
 }
-void GetDestination(piece &Selected, piece &Destination, string player, vector<string> &board){//Prompts player for destination
+void GetDestination(piece Selected, piece &Destination, string player, vector<string> &board){//Prompts player for destination
     int destinationColumn, destinationRow;
 
     cout<<"pick where row of piece destination"<<endl;
-    cin>>destinationRow; Destination.SetRow(destinationRow);
+    cin>>destinationRow; Destination.SetRow(destinationRow-1);
     cout<<"pick column of piece destination"<<endl;
-    cin>>destinationColumn;Destination.SetCol(destinationColumn);
+    cin>>destinationColumn;Destination.SetCol(destinationColumn-1);
 
-    Destination.SetName(board.at(((destinationRow-1)*8) + (destinationColumn-1)));
-
+    Destination.SetName(board.at(((Destination.Row())*8) + (Destination.Col())));
+    //cout<<Destination.GetName()<<endl;
     while(Destination.Player() == player){
         PrintBoard(board);
         cout<<"INVALID!"<<endl;
         GetPiece(Selected, player,board);
         cout<<"pick row of piece destination:"<<endl;
-        cin>>destinationRow; Destination.SetRow(destinationRow);
+        cin>>destinationRow; Destination.SetRow(destinationRow-1);
         cout<<"pick column of piece destination"<<endl;
-        cin>>destinationColumn; Destination.SetCol(destinationColumn);
-
-        Destination.SetName(board.at(((destinationRow-1)*8) + (destinationColumn-1)));
+        cin>>destinationColumn; Destination.SetCol(destinationColumn-1);
+        Destination.SetName(board.at(((Destination.Row())*8) + (Destination.Col())));
     }
 }
 void Retry(string pieceFullName, piece &Selected, piece &Destination, string player, vector<string> &board){//RePrompts player for piece and destination
@@ -129,7 +138,7 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
     string tempPiece, enemy = "2";
     if(player == "2"){enemy = "1";}
     bool safe = true;
-    cout<<"begin knight check"<<endl;
+    //cout<<"begin knight check"<<endl;
     int knights[8] = {6, 10, 15, 17, -6, -10, -15, -17};//possible knight tiles
     for(int i = 0; i < 8; i++){
         if(InDanger.Row()*8 + InDanger.Col() + knights[i] < 0){continue;}
@@ -143,10 +152,10 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
             continue;
         }
     }
-    cout<<"passed knight check"<<endl;
+    //cout<<"passed knight check"<<endl;
 
 
-    cout<<"begin perp check"<<endl;
+    //cout<<"begin perp check"<<endl;
     int perps[2] = {1, -1};
     for(int i = 0; i < 2; i++){//columns
         int add = perps[i];
@@ -180,10 +189,10 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
             add+=perps[i];
         }
     }
-    cout<<"passed perp check"<<endl;
+    //cout<<"passed perp check"<<endl;
 
 
-    cout<<"begin diag check"<<endl;
+    //cout<<"begin diag check"<<endl;
     int diags[2] = {-1, 1};
     for(int i = 0; i < 2; i++){
         for(int k = 0; k <2; k++){
@@ -205,7 +214,7 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
             }
         }
     }
-    cout<<"passed diag check"<<endl;
+    //cout<<"passed diag check"<<endl;
 
     //cout<<"list of attacker tiles="<<endl;
     //for(piece attacker : attackers){
@@ -215,18 +224,13 @@ string CheckSafety(piece InDanger, string player, vector<string> &board, vector<
     if(!safe){return "unsafe";}
     return "safe";
 }
-string TheoricalSafety(piece InDanger, string player, vector<string> board, piece Attacker, piece attackerDestination){//checks if a theoretical move will be safe
+string TheoreticalSafety(piece InDanger, string player, vector<string> board, piece Attacker, piece attackerDestination){//checks if a theoretical move will be safe by not passing the board by reference
     vector<piece> tempAttackers;
-    string enemy = "2";
-    if(player == "2"){enemy = "1";}
-
-    board.at(attackerDestination.Row()*8 + attackerDestination.Col()) = board.at((Attacker.Row() *8) + Attacker.Col());//make switch on theoretical board
-    board.at((Attacker.Row() *8) + Attacker.Col()) = "XX";
-
+    MovePiece(Attacker, attackerDestination, board);
     return CheckSafety(InDanger, player, board, tempAttackers);//check safety of theoretical board
 
 }
-void CheckValid(piece Selected, piece Destination, string player, vector<string> &board){//check that a pieces destination is valid
+void CheckValid(piece King, piece &Selected, piece &Destination, string player, vector<string> board){//check that a pieces destination is valid
 start:
     string tempPiece;
     int tempHIGH, tempLOW, row ,column;
@@ -399,13 +403,14 @@ start:
 
         }
 
+        while(TheoreticalSafety(King, player, board, Selected, Destination) != "safe"){
+            Retry("move, your king is exposed, try another",Selected,Destination,player,board);
+            goto start;
+        }
         return;
     }
 }
-void MovePiece(piece Selected, piece Destination, vector<string> &board){//moves piece on board
-    board.at(((Selected.Row()-1)*8) + (Selected.Col()-1)) = "XX";
-    board.at(((Destination.Row()-1)*8) + (Destination.Col()-1)) = Selected.GetName();
-}
+
 bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker){//Checks if you can block the path of the attacker
     int row=Attacker.GetRowOp(), column = Attacker.GetColOp();
     vector<piece> blockers;
@@ -415,22 +420,20 @@ bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker)
     while(board.at(((King.Row()+row)*8)+King.Col()+column) != Attacker.GetName()){//make less messy<<<<<<<<
         piece Tile(King.Row() +row, King.Col()+column, "XX");//set up Tile
 
-        if(InBoard(King.Row()+row + (1*direction) , King.Col()+column)){
-            cout<<"go"<<endl;
+        if(InBoard(King.Row()+row + (1*direction) , King.Col()+column)){//check if pawn can block
             piece Pawn(King.Row()+row +(1*direction), King.Col()+column, board.at(((King.Row()+row+(1*direction))*8)+King.Col()+column)); // gross setting up of pieces
             // gross setting up of pieces
             if(Pawn.GetName() == "P"+player){
-                cout<<"pawn check!"<<endl;
-                if(TheoricalSafety(King ,player, board, Pawn, Tile) == "safe"){
-
+                //cout<<"pawn check!"<<endl;
+                if(TheoreticalSafety(King ,player, board, Pawn, Tile) == "safe"){
                     return true;
                 }
             }
         }
         if(CheckSafety(Tile, enemyPlayer, board, blockers) != "safe"){//if you can attack the tile //might not account for some pawn scenarios, not sure though
             for(piece blocker : blockers){//check if any of the blockers can succesfully attack the spot
-                if(blocker.Type() != "P" && TheoricalSafety(King,player, board, blocker, Tile) == "safe"){
-                    cout<<"CAN BLOCK!!!!!!!!!"<<endl;
+                if(blocker.Type() != "P" && TheoreticalSafety(King,player, board, blocker, Tile) == "safe"){
+                    //cout<<"CAN BLOCK!!!!!!!!!"<<endl;
                     return true;
                 }
             }
@@ -441,7 +444,7 @@ bool AbleToBlock(piece King, string player,vector<string> board, piece Attacker)
 
     return false;
 }
-string Result(string player, vector<string> &board){
+string Result(string player, vector<string> &board, piece &returnKing){
     bool underAttack = false;
     string attackerSafety, tempPiece, enemyPlayer = "1", direction;
     vector<piece> defenders, kingsAttackers, attackers2;
@@ -455,6 +458,7 @@ string Result(string player, vector<string> &board){
 
             if(finds("K", tempPiece) && finds(player, tempPiece)){//finds a king
                 piece King(kingRow, kingCol, "K"+player);
+                returnKing = King;
                 //cout<<"king found at "<<King.Row()+1<<" "<<King.Col()+1<<endl;
                 //cout<<"king vector row = "<<King.Row()<<", king vector column = "<<King.Col()<<endl;
 
@@ -478,7 +482,7 @@ string Result(string player, vector<string> &board){
                     if(attackerSafety != "safe"){//CAN ATTACK YOUR ATTACKER
                         for(piece Defender : defenders){//every possible defender
                             //cout<<"step1"<<endl;
-                            if(TheoricalSafety(King ,player,board,Defender, kingsAttackers.at(0)) == "safe"){//check the safety of doing that move
+                            if(TheoreticalSafety(King,player,board,Defender, kingsAttackers.at(0)) == "safe"){//check the safety of doing that move
                                 return "none";
                             }
 
@@ -487,13 +491,15 @@ string Result(string player, vector<string> &board){
                     }
                     //try to block your attacker //if its a horse you're cooked
                     if(kingsAttackers.at(0).Type() == "H"){return "checkmate";}//if attacker is a knight and you cant move and you cant attack him, theres no point in trying to block
-                    if(AbleToBlock(King ,player,board, kingsAttackers.at(0))){continue;}
+                    if(AbleToBlock(King ,player,board, kingsAttackers.at(0))){continue;}//can probably just remove the "can attakcer your attacker" part and include it into the abletoblock function
 
-                    PrintBoard(board);
+                    //PrintBoard(board);
+
                     return"checkmate, player " + enemyPlayer + " wins";
 
 
                 }
+
 
             }
         }
@@ -509,19 +515,19 @@ int main()//Chess
 
     string selectedPiece, selectedTile;
     string player = "1";
-    piece Selected, Destination;
-    vector<string> board = {"P1", "H1", "B1", "P1", "K1","P1","R2","XX",
-                            "P1", "P1", "XX", "P1", "P1","XX","XX","XX",
-                            "XX", "XX", "XX", "XX", "XX","XX","B2","XX",
+    piece Selected, Destination, King;
+    vector<string> board = {"XX", "P1", "Q2", "Q1", "K1","B1","H1","R1",
+                            "P1", "XX", "P1", "P1", "P1","P1","P1","P1",
                             "XX", "XX", "XX", "XX", "XX","XX","XX","XX",
                             "XX", "XX", "XX", "XX", "XX","XX","XX","XX",
-                            "XX", "XX", "XX", "XX", "XX","XX","XX","XX",
+                            "Q2", "XX", "XX", "XX", "XX","XX","XX","XX",
+                            "XX", "XX", "XX", "XX", "Q1","XX","XX","XX",
                             "P2", "P2", "P2", "P2", "P2","P2","P2","P2",
                             "R2", "H2", "B2", "Q2", "K2","B2","H2","R2"};
 
 
-    while(Result(player, board) == "none"){
-
+    while(Result(player, board, King) == "none"){
+        cout<<King.GetName()<<endl;
         PrintBoard(board);
         cout<<"Player "<<player<<"'s turn, ";
 
@@ -529,9 +535,8 @@ int main()//Chess
 
         GetDestination(Selected, Destination,player,board);
 
-        CheckValid(Selected, Destination, player, board);
+        CheckValid(King, Selected, Destination, player, board);
 
-        //cout<<"check valid done"<<endl;
         MovePiece(Selected, Destination, board);
         if (player == "1")player = "2";
         else player = "1";
@@ -539,8 +544,8 @@ int main()//Chess
     }
 
 
-
-    cout<<Result(player, board)<<endl;
+    PrintBoard(board);
+    cout<<Result(player, board, King)<<endl;
 
     return 0;
 }
